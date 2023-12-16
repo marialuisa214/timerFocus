@@ -57,3 +57,28 @@ export const HistoryList = styled.div`
     }
   }
 `
+
+const STATUS_COLOR = {
+  green: 'green-500',
+  yellow: 'yellow-500',
+  red: 'red-500',
+} as const
+interface StatusProps {
+  statusColor: keyof typeof STATUS_COLOR // todas as chaves do objeto STATUS_COLOR
+}
+
+export const Status = styled.span<StatusProps>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background-color: ${(props) =>
+      props.theme[STATUS_COLOR[props.statusColor]]};
+  }
+`
