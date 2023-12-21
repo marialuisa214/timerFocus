@@ -5,15 +5,12 @@ import { HandPalm, Play } from '@phosphor-icons/react'
 import * as zod from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
-  CountdonwContainer,
-  FormContainer,
   HomeContainer,
-  MinutesInput,
-  Separator,
   StartCountdownButton,
   StopCountdownButton,
-  TaskInput,
 } from './styles'
+import { NewCycleForm } from './NewCycleForm'
+import { CountDown } from './CountDown'
 
 const newCycleValidationSchema = zod.object({
   task: zod.string().min(1, 'A tarefa deve ter pelo menos 1 caractere'),
@@ -38,6 +35,7 @@ interface CycleTask {
   minutes: number
   startDate: Date
   interrupted?: Date
+  finisheedDate?: Date
 }
 
 export function Home() {
@@ -55,22 +53,6 @@ export function Home() {
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleID)
   // encontra o ciclo ativo pelo id, na lista cycles
-
-  useEffect(() => {
-    let interval: number
-    if (activeCycle) {
-      // se o ciclo ativo existir
-      interval = setInterval(() => {
-        setAmountSeconds(differenceInSeconds(new Date(), activeCycle.startDate))
-      }, 1000)
-    }
-
-    return () => {
-      // -> quando o userEffect for chamado de novo ele deve fazer algo
-      clearInterval(interval)
-      setAmountSeconds(0)
-    }
-  }, [activeCycle])
 
   function handleCreateNewTask(data: NewCycleFormData) {
     // data -> objeto com os valores dos inputs
@@ -106,10 +88,41 @@ export function Home() {
     }
   }, [minutes, seconds, activeCycle])
 
+  useEffect(() => {
+    let interval: number
+
+    if (activeCycle) {
+      setInterval(() => {
+        const secondsDifference = differenceInSeconds(
+          new Date(),
+          activeCycle.startDate,
+        )
+        if (secondsDifference >= totalSeconds) {
+          setCycles((state) =>
+            state.map((cycle) => {
+              if (cycle.id === activeCycleID) {
+                return { ...cycle, finishedDate: new Date() }
+              } else {
+                return cycle
+              }
+            }),
+          )
+          setAmountSeconds(totalSeconds)
+          clearInterval(interval)
+        } else {
+          setAmountSeconds(secondsDifference)
+        }
+      }, 1000)
+    }
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [activeCycle, totalSeconds, activeCycleID])
+
   const task = watch('task') // watch -> monitora o valor de um input
 
-  function HadleInterruptCycle() {
-    setActiveCycleID(null)
+  function handleInterruptCycle() {
     setCycles(
       cycles.map((cycle) => {
         if (cycle.id === activeCycleID) {
@@ -119,51 +132,19 @@ export function Home() {
           }
         }
         return cycle
+        setActiveCycleID(null)
       }),
     )
   }
   return (
     <HomeContainer>
       <form action="" onSubmit={handleSubmit(handleCreateNewTask)}>
-        <FormContainer>
-          <label htmlFor="">Vou trabalhar em</label>
-          <TaskInput
-            id="task"
-            list="taskSugestions"
-            placeholder="Dê um nome para o seu Projeto"
-            {...register('task')}
-            disabled={!!activeCycle}
-          />
-          <datalist id="taskSugestions">
-            <option value="Projeto 1" />
-            <option value="Projeto 2" />
-            <option value="Projeto 3" />
-          </datalist>
-          <label htmlFor="">Durante</label>
-          <MinutesInput
-            step={5}
-            min={5}
-            max={60}
-            type="number"
-            id="time"
-            placeholder="00"
-            {...register('minutes', { valueAsNumber: true })}
-            disabled={!!activeCycle}
-          />
-          <span>minutos.</span>
-        </FormContainer>
-
-        <CountdonwContainer>
-          <span>{minutes[0]}</span>
-          <span>{minutes[1]}</span>
-          <Separator>:</Separator>
-          <span>{seconds[0]}</span>
-          <span>{seconds[1]}</span>
-        </CountdonwContainer>
+        <NewCycleForm />
+        <CountDown />
 
         {activeCycle ? (
           <StopCountdownButton
-            onClick={() => HadleInterruptCycle()}
+            onClick={() => handleInterruptCycle()}
             type="button"
           >
             <HandPalm size={24} />
