@@ -10,25 +10,7 @@ import {
   StopCountdownButton,
 } from './styles'
 import { NewCycleForm } from './NewCycleForm'
-import { CountDown } from './CountDown'
-
-const newCycleValidationSchema = zod.object({
-  task: zod.string().min(1, 'A tarefa deve ter pelo menos 1 caractere'),
-  minutes: zod
-    .number()
-    .min(5, 'O tempo mínimo é de 5 minutos')
-    .max(60, 'O tempo máximo é de 60 minutos'),
-})
-
-// interface NewCycleFormData {
-//   task: string
-//   minutes: number
-// }
-
-// -> vamos inferir a timagem a partir newCycleValidationSchema, pois perceba, que ele tem os mesmos campos e o que esperamos, string e number
-
-type NewCycleFormData = zod.infer<typeof newCycleValidationSchema>
-
+import { CountDown } from './components/CountDown'
 interface CycleTask {
   id: string
   task: string
@@ -42,14 +24,6 @@ export function Home() {
   const [cycles, setCycles] = useState<CycleTask[]>([])
   const [activeCycleID, setActiveCycleID] = useState<string | null>(null)
   const [amountSeconds, setAmountSeconds] = useState(0) // armazena o total de segundos que ja se passou desde que a variavel foi criada
-
-  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
-    resolver: zodResolver(newCycleValidationSchema),
-    defaultValues: {
-      task: '',
-      minutes: 0,
-    },
-  })
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleID)
   // encontra o ciclo ativo pelo id, na lista cycles
@@ -71,16 +45,6 @@ export function Home() {
     reset() // -> reseta os valores dos inputs
   }
 
-  const totalSeconds = activeCycle ? activeCycle.minutes * 60 : 0
-  const currentSecons = activeCycle ? totalSeconds - amountSeconds : 0
-
-  const minutesAmount = Math.floor(currentSecons / 60)
-  const secondsAmount = currentSecons % 60
-
-  const minutes = String(minutesAmount).padStart(2, '0')
-  // partStart -> se a string tiver menos de 2 caracteres, ele vai adicionar o 0 no inicio
-
-  const seconds = String(secondsAmount).padStart(2, '0')
 
   useEffect(() => {
     if (activeCycle) {
@@ -88,37 +52,7 @@ export function Home() {
     }
   }, [minutes, seconds, activeCycle])
 
-  useEffect(() => {
-    let interval: number
-
-    if (activeCycle) {
-      setInterval(() => {
-        const secondsDifference = differenceInSeconds(
-          new Date(),
-          activeCycle.startDate,
-        )
-        if (secondsDifference >= totalSeconds) {
-          setCycles((state) =>
-            state.map((cycle) => {
-              if (cycle.id === activeCycleID) {
-                return { ...cycle, finishedDate: new Date() }
-              } else {
-                return cycle
-              }
-            }),
-          )
-          setAmountSeconds(totalSeconds)
-          clearInterval(interval)
-        } else {
-          setAmountSeconds(secondsDifference)
-        }
-      }, 1000)
-    }
-
-    return () => {
-      clearInterval(interval)
-    }
-  }, [activeCycle, totalSeconds, activeCycleID])
+ 
 
   const task = watch('task') // watch -> monitora o valor de um input
 
@@ -140,7 +74,7 @@ export function Home() {
     <HomeContainer>
       <form action="" onSubmit={handleSubmit(handleCreateNewTask)}>
         <NewCycleForm />
-        <CountDown />
+        <CountDown activeCycle={activeCycle} setCycles={setCycles}, activeCycleID={activeCycleID}/>
 
         {activeCycle ? (
           <StopCountdownButton
