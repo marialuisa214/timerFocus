@@ -1,5 +1,6 @@
-import { set, useForm } from 'react-hook-form' // hooks -> acomplam uma funcionalidade a um componente
-import { useState } from 'react'
+import { useForm } from 'react-hook-form' // hooks -> acomplam uma funcionalidade a um componente
+import { useEffect, useState } from 'react'
+import { differenceInSeconds } from 'date-fns'
 import { Play } from '@phosphor-icons/react'
 import * as zod from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,6 +35,7 @@ interface CycleTask {
   id: string
   task: string
   minutes: number
+  startDate: Date
 }
 
 export function Home() {
@@ -49,6 +51,25 @@ export function Home() {
     },
   })
 
+  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleID)
+  // encontra o ciclo ativo pelo id, na lista cycles
+
+  useEffect(() => {
+    let interval: number
+    if (activeCycle) {
+      // se o ciclo ativo existir
+      interval = setInterval(() => {
+        setAmountSeconds(differenceInSeconds(new Date(), activeCycle.startDate))
+      }, 1000)
+    }
+
+    return () => {
+      // -> quando o userEffect for chamado de novo ele deve fazer algo
+      clearInterval(interval)
+      setAmountSeconds(0)
+    }
+  }, [activeCycle])
+
   function handleCreateNewTask(data: NewCycleFormData) {
     // data -> objeto com os valores dos inputs
 
@@ -57,6 +78,7 @@ export function Home() {
       id,
       task: data.task,
       minutes: data.minutes,
+      startDate: new Date(),
     }
 
     setCycles((state) => [...state, newCycle])
@@ -64,9 +86,6 @@ export function Home() {
 
     reset() // -> reseta os valores dos inputs
   }
-
-  const activeCycle = cycles.find((cycle) => cycle.id === activeCycleID)
-  // encontra o ciclo ativo pelo id, na lista cycles
 
   const totalSeconds = activeCycle ? activeCycle.minutes * 60 : 0
   const currentSecons = activeCycle ? totalSeconds - amountSeconds : 0
@@ -78,6 +97,12 @@ export function Home() {
   // partStart -> se a string tiver menos de 2 caracteres, ele vai adicionar o 0 no inicio
 
   const seconds = String(secondsAmount).padStart(2, '0')
+
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${minutes}:${seconds} `
+    }
+  }, [minutes, seconds, activeCycle])
 
   const task = watch('task') // watch -> monitora o valor de um input
 
