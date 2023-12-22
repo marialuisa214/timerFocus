@@ -1,14 +1,11 @@
-import { useEffect, useState } from "react"
-import { CountdonwContainer, Separator } from "./styles"
-import { differenceInSeconds } from "date-fns"
+import { useContext, useEffect, useState } from 'react'
+import { CountdonwContainer, Separator } from './styles'
+import { differenceInSeconds } from 'date-fns'
+import { CyclesContext } from '../..'
 
-interface CountDownProps {
-    activeCycle: any
-    setCycles: any
-    activeCycleID:any
-}
-
-export function CountDown({activeCycle, setCycles, activeCycleID}: CountDownProps){
+export function CountDown() {
+  const { activeCycle, activeCycleID, markCurrentCycleAsFinished } =
+    useContext(CyclesContext)
 
   const [amountSeconds, setAmountSeconds] = useState(0) // armazena o total de segundos que ja se passou desde que a variavel foi criada
 
@@ -18,11 +15,15 @@ export function CountDown({activeCycle, setCycles, activeCycleID}: CountDownProp
   const minutesAmount = Math.floor(currentSecons / 60)
   const secondsAmount = currentSecons % 60
 
-
-
   const minutes = String(minutesAmount).padStart(2, '0')
   // partStart -> se a string tiver menos de 2 caracteres, ele vai adicionar o 0 no inicio
   const seconds = String(secondsAmount).padStart(2, '0')
+
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${minutes}:${seconds} `
+    }
+  }, [minutes, seconds, activeCycle])
 
   useEffect(() => {
     let interval: number
@@ -34,15 +35,7 @@ export function CountDown({activeCycle, setCycles, activeCycleID}: CountDownProp
           activeCycle.startDate,
         )
         if (secondsDifference >= totalSeconds) {
-          setCycles((state) =>
-            state.map((cycle) => {
-              if (cycle.id === activeCycleID) {
-                return { ...cycle, finishedDate: new Date() }
-              } else {
-                return cycle
-              }
-            }),
-          )
+          markCurrentCycleAsFinished()
           setAmountSeconds(totalSeconds)
           clearInterval(interval)
         } else {
@@ -54,14 +47,14 @@ export function CountDown({activeCycle, setCycles, activeCycleID}: CountDownProp
     return () => {
       clearInterval(interval)
     }
-  }, [activeCycle, totalSeconds, activeCycleID])
-    return {
-        <CountdonwContainer>
-            <span>{minutes[0]}</span>
-            <span>{minutes[1]}</span>
-            <Separator>:</Separator>
-            <span>{seconds[0]}</span>
-            <span>{seconds[1]}</span>
-        </CountdonwContainer>
-    }
+  }, [activeCycle, totalSeconds, activeCycleID, markCurrentCycleAsFinished])
+  return (
+    <CountdonwContainer>
+      <span>{minutes[0]}</span>
+      <span>{minutes[1]}</span>
+      <Separator>:</Separator>
+      <span>{seconds[0]}</span>
+      <span>{seconds[1]}</span>
+    </CountdonwContainer>
+  )
 }
