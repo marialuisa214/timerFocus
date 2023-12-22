@@ -1,13 +1,16 @@
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect } from 'react'
 import { CountdonwContainer, Separator } from './styles'
 import { differenceInSeconds } from 'date-fns'
 import { CyclesContext } from '../..'
 
 export function CountDown() {
-  const { activeCycle, activeCycleID, markCurrentCycleAsFinished } =
-    useContext(CyclesContext)
-
-  const [amountSeconds, setAmountSeconds] = useState(0) // armazena o total de segundos que ja se passou desde que a variavel foi criada
+  const {
+    activeCycle,
+    activeCycleID,
+    markCurrentCycleAsFinished,
+    amountSeconds,
+    setSecondsPassed,
+  } = useContext(CyclesContext)
 
   const totalSeconds = activeCycle ? activeCycle.minutes * 60 : 0
   const currentSecons = activeCycle ? totalSeconds - amountSeconds : 0
@@ -36,10 +39,10 @@ export function CountDown() {
         )
         if (secondsDifference >= totalSeconds) {
           markCurrentCycleAsFinished()
-          setAmountSeconds(totalSeconds)
+          setSecondsPassed(totalSeconds)
           clearInterval(interval)
         } else {
-          setAmountSeconds(secondsDifference)
+          setSecondsPassed(secondsDifference)
         }
       }, 1000)
     }
@@ -47,7 +50,13 @@ export function CountDown() {
     return () => {
       clearInterval(interval)
     }
-  }, [activeCycle, totalSeconds, activeCycleID, markCurrentCycleAsFinished])
+  }, [
+    activeCycle,
+    totalSeconds,
+    activeCycleID,
+    markCurrentCycleAsFinished,
+    setSecondsPassed,
+  ])
   return (
     <CountdonwContainer>
       <span>{minutes[0]}</span>
