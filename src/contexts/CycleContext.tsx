@@ -68,15 +68,13 @@ export function CycleContextProvider({ children }: CycleContextProviderProps) {
     setCycles((state) => [...state, newCycle])
     setActiveCycleID(id)
     setAmountSeconds(0)
-
-    // reset() // -> reseta os valores dos inputs
   }
 
   function interruptCurrentCycle() {
     setCycles(
       cycles.map((cycle) => {
         if (cycle.id === activeCycleID) {
-          return { ...cycle, interruptedDate: new Date() }
+          return { ...cycle, interrupted: new Date() }
         } else {
           return cycle
         }

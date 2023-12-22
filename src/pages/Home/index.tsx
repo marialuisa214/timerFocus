@@ -33,13 +33,18 @@ export function Home() {
     },
   })
 
-  const { handleSubmit, watch /* reset */ } = newCycleForm
+  const { handleSubmit, watch, reset } = newCycleForm
+
+  function handleCreateNewTask(data: NewCycleFormData) {
+    createNewTask(data)
+    reset()
+  }
 
   const task = watch('task') // watch -> monitora o valor de um input
 
   return (
     <HomeContainer>
-      <form action="" onSubmit={handleSubmit(createNewTask)}>
+      <form action="" onSubmit={handleSubmit(handleCreateNewTask)}>
         <FormProvider {...newCycleForm}>
           {/* pega todas as funcionalidades do newCycleForm e passa para o filho */}
           <NewCycleForm />

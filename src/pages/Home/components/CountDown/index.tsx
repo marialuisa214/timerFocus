@@ -25,6 +25,8 @@ export function CountDown() {
   useEffect(() => {
     if (activeCycle) {
       document.title = `${minutes}:${seconds} `
+    } else {
+      document.title = 'TimerFocus'
     }
   }, [minutes, seconds, activeCycle])
 
@@ -40,6 +42,7 @@ export function CountDown() {
         if (secondsDifference >= totalSeconds) {
           markCurrentCycleAsFinished()
           setSecondsPassed(totalSeconds)
+          activeCycle.interrupted = new Date()
           clearInterval(interval)
         } else {
           setSecondsPassed(secondsDifference)
