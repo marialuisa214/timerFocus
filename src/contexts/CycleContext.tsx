@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react'
+import { createContext, useReducer, useState } from 'react'
 
 interface CycleTask {
   id: string
@@ -25,6 +25,11 @@ interface CycleContextType {
   interruptCurrentCycle: () => void
 }
 
+interface CycleState {
+  cycles: CycleTask[]
+  activeCycleID: string | null
+}
+
 export const CyclesContext = createContext({} as CycleContextType)
 
 interface CycleContextProviderProps {
@@ -32,23 +37,70 @@ interface CycleContextProviderProps {
 }
 
 export function CycleContextProvider({ children }: CycleContextProviderProps) {
-  const [cycles, setCycles] = useState<CycleTask[]>([])
-  const [activeCycleID, setActiveCycleID] = useState<string | null>(null)
+  const [cyclesState, dispatch] = useReducer(
+    (state: CycleState, action: any) => {
+      switch (action.type) {
+        case 'FINISHEED_CYCLE':
+          return {
+            ...state,
+            cycles: state.cycles.map((cycle) => {
+              if (cycle.id === state.activeCycleID) {
+                return { ...cycle, finisheedDate: new Date() }
+              } else {
+                return cycle
+              }
+            }),
+            activeCycleID: null,
+          }
+        case 'INTERRUPT_CURRENT_CYCLE': {
+          return {
+            ...state,
+            cycles: state.cycles.map((cycle) => {
+              if (cycle.id === state.activeCycleID) {
+                return { ...cycle, interruptedDate: new Date() }
+              } else {
+                return cycle
+              }
+            }),
+            activeCycleID: null,
+          }
+        }
+        case 'ADD_NEW_CYCLE':
+          return {
+            ...state,
+            cycles: [...state.cycles, action.payload.newCycle],
+            activeCycleID: action.payload.newCycle.id,
+          }
+        default:
+          return state
+      }
+      return state
+    },
+    {
+      cycles: [],
+      activeCycleID: null,
+    },
+  )
+
+  /**
+   * state -> estado atual
+   * action -> ação que vai ser executada para modificar o estado
+   * dispach -> função que vai disparar a executar a ação(action)
+   */
+
   const [amountSeconds, setAmountSeconds] = useState(0) // armazena o total de segundos que ja se passou desde que a variavel foi criada
+  const { cycles, activeCycleID } = cyclesState
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleID)
   // encontra o ciclo ativo pelo id, na lista cycles
 
   function markCurrentCycleAsFinished() {
-    setCycles((state) =>
-      state.map((cycle) => {
-        if (cycle.id === activeCycleID) {
-          return { ...cycle, finishedDate: new Date() }
-        } else {
-          return cycle
-        }
-      }),
-    )
+    dispatch({
+      type: 'FINISHEED_CYCLE',
+      payload: {
+        activeCycleID,
+      },
+    })
   }
   function setSecondsPassed(seconds: number) {
     setAmountSeconds(seconds)
@@ -64,23 +116,32 @@ export function CycleContextProvider({ children }: CycleContextProviderProps) {
       minutes: data.minutes,
       startDate: new Date(),
     }
+    dispatch({
+      type: 'ADD_NEW_CYCLE',
+      payload: {
+        newCycle,
+      },
+    })
 
-    setCycles((state) => [...state, newCycle])
-    setActiveCycleID(id)
     setAmountSeconds(0)
   }
 
   function interruptCurrentCycle() {
-    setCycles(
-      cycles.map((cycle) => {
-        if (cycle.id === activeCycleID) {
-          return { ...cycle, interrupted: new Date() }
-        } else {
-          return cycle
-        }
-      }),
-    )
-    setActiveCycleID(null)
+    dispatch({
+      type: 'INTERRUPT_CURRENT_CYCLE',
+      payload: {
+        activeCycleID,
+      },
+    })
+    // setCycles(
+    //   cycles.map((cycle) => {
+    //     if (cycle.id === activeCycleID) {
+    //       return { ...cycle, interrupted: new Date() }
+    //     } else {
+    //       return cycle
+    //     }
+    //   }),
+    // )
   }
 
   return (
